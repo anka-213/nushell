@@ -785,6 +785,7 @@ pub fn parse_alias(
     module_name: Option<&[u8]>,
 ) -> Pipeline {
     let spans = &lite_command.parts;
+    assert!(spans.len() > 0);
 
     let (_has_export, rest_spans) = optional_string(spans, b"export", working_set);
     let (true, _rest_spans) = optional_string(rest_spans, b"alias", working_set) else {
@@ -794,28 +795,29 @@ pub fn parse_alias(
         ));
         return garbage_pipeline(spans);
     };
-    let (name_span, split_id) =
-        // Requires spans.len() > 0
-        if spans.len() > 1 && working_set.get_span_contents(spans[0]) == b"export" {
-            // Requires spans.len() > 1
-            (spans[1], 2)
-        } else {
-            // Requires spans.len() > 0
-            (spans[0], 1)
-        };
 
-    let name = working_set.get_span_contents(name_span);
+    let (command_span, rest_spans) = match &spans[..] {
+        &[alias_span, ref rest_spans @ ..]
+            if working_set.get_span_contents(alias_span) == b"alias" =>
+        {
+            (span(&[alias_span]), rest_spans)
+        }
+        &[export_span, alias_span, ref rest_spans @ ..]
+            if working_set.get_span_contents(span(&[export_span, alias_span]))
+                == b"export alias" =>
+        {
+            (span(&[export_span, alias_span]), rest_spans)
+        }
+        _ => {
+            working_set.error(ParseError::InternalError(
+                "Alias statement unparsable".into(),
+                span(spans),
+            ));
+            return garbage_pipeline(spans);
+        }
+    };
 
-    if name != b"alias" {
-        working_set.error(ParseError::InternalError(
-            "Alias statement unparsable".into(),
-            span(spans),
-        ));
-        return garbage_pipeline(spans);
-    }
-    let (command_spans, rest_spans) = spans.split_at(split_id);
-
-    if let Some(span) = check_name(working_set, command_spans, rest_spans) {
+    if let Some(span) = check_name(working_set, command_span, rest_spans) {
         return Pipeline::from_vec(vec![garbage(*span)]);
     }
 
@@ -828,7 +830,7 @@ pub fn parse_alias(
             call: alias_call,
             output,
             ..
-        } = parse_internal_call(working_set, span(command_spans), rest_spans, decl_id);
+        } = parse_internal_call(working_set, command_span, rest_spans, decl_id);
         working_set
             .parse_errors
             .truncate(original_starting_error_count);
@@ -870,7 +872,7 @@ pub fn parse_alias(
             return garbage_pipeline(spans);
         };
 
-        if spans.len() >= split_id + 3 {
+        if rest_spans.len() >= 3 {
             // Requires spans.len() > split_id
             // Requires spans.len() > split_id
             if let Some(mod_name) = module_name {
@@ -879,24 +881,24 @@ pub fn parse_alias(
                         "alias".to_string(),
                         alias_name,
                         "main".to_string(),
-                        spans[split_id],
+                        rest_spans[0],
                     ));
 
                     return alias_pipeline;
                 }
 
                 if alias_name == "main" {
-                    working_set.error(ParseError::ExportMainAliasNotAllowed(spans[split_id]));
+                    working_set.error(ParseError::ExportMainAliasNotAllowed(rest_spans[0]));
                     return alias_pipeline;
                 }
             }
 
-            // Requires spans.len() > split_id + 1
+            // Requires spans.len() > 1
             // Requires replacement_spans.len() > 0
-            let _equals = working_set.get_span_contents(spans[split_id + 1]);
+            let _equals = working_set.get_span_contents(rest_spans[1]);
 
-            // Requires spans.len() >= (split_id + 2)
-            let replacement_spans = &spans[(split_id + 2)..];
+            // Requires spans.len() >= 2
+            let replacement_spans = &rest_spans[2..];
             let first_bytes = working_set.get_span_contents(replacement_spans[0]);
 
             if first_bytes != b"if"
@@ -996,7 +998,7 @@ pub fn parse_alias(
         if spans.len() < 4 {
             working_set.error(ParseError::IncorrectValue(
                 "Incomplete alias".into(),
-                span(&spans[..split_id]),
+                command_span,
                 "incomplete alias".into(),
             ));
         }

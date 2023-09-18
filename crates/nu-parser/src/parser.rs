@@ -234,7 +234,10 @@ fn test_check_name() {
     // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
     let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
         // let [a, b, c @ ..] = spans;
-        format!("{:?}", check_name(working_set, &spans[..2], &spans[2..]))
+        format!(
+            "{:?}",
+            check_name(working_set, span(&spans[..2]), &spans[2..])
+        )
     };
     run_test(contents, test_inner);
 }
@@ -278,13 +281,12 @@ pub fn run_test(
 
 pub fn check_name<'a>(
     working_set: &mut StateWorkingSet,
-    command_spans: &'a [Span],
+    command_span: Span,
     spans: &'a [Span],
 ) -> Option<&'a Span> {
     match spans {
         [name_span, ..] if working_set.get_span_contents(*name_span) == b"=" => {
-            let command_name =
-                String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            let command_name = String::from_utf8_lossy(working_set.get_span_contents(command_span));
             working_set.error(ParseError::AssignmentMismatch(
                 format!("{command_name} missing name"),
                 "missing name".into(),
@@ -293,8 +295,7 @@ pub fn check_name<'a>(
             Some(name_span)
         }
         [_, equals_span, ..] if working_set.get_span_contents(*equals_span) != b"=" => {
-            let command_name =
-                String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            let command_name = String::from_utf8_lossy(working_set.get_span_contents(command_span));
             working_set.error(ParseError::AssignmentMismatch(
                 format!("{command_name} missing sign"),
                 "missing equal sign".into(),
