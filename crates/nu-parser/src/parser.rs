@@ -281,14 +281,6 @@ pub fn check_name<'a>(
     command_spans: &'a [Span],
     spans: &'a [Span],
 ) -> Option<&'a Span> {
-    // eprintln!(
-    //     "check_name: spans: {:?}",
-    //     spans
-    //         .iter()
-    //         .map(|x| std::str::from_utf8(working_set.get_span_contents(*x)).unwrap())
-    //         .collect_vec()
-    // );
-
     match spans {
         [name_span, ..] if working_set.get_span_contents(*name_span) == b"=" => {
             let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
