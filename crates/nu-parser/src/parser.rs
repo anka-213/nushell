@@ -5252,10 +5252,7 @@ pub fn parse_expression(
 ) -> Expression {
     trace!("parsing: expression");
     let Some(&head) = spans.get(0) else {
-        let err = ParseError::InternalError(
-            "parse_expression got 0 spans".into(), Span::unknown());
-        working_set.error(err);
-        return garbage(span(spans));
+        panic!("parse_expression got 0 spans");
     };
 
     let mut pos = 0;
