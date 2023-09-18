@@ -758,15 +758,37 @@ fn optional_string<'a>(
     }
 }
 
+#[test]
+fn test_parse_alias() {
+    let contents = b"export alias";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        let mut lite_command = LiteCommand::new();
+        for span in spans {
+            lite_command.push(*span);
+        }
+        // let [&a, &b] = spans
+        //     .iter()
+        //     .map(|span| {
+        //         eprintln!("Got span: {span:?}");
+        //         span
+        //     })
+        //     .collect_vec()[..] else { panic!("wrong length")};
+        format!("{:?}", parse_alias(working_set, &lite_command, None))
+    };
+    crate::parser::run_test(contents, test_inner);
+}
+
 pub fn parse_alias(
     working_set: &mut StateWorkingSet,
     lite_command: &LiteCommand,
     module_name: Option<&[u8]>,
 ) -> Pipeline {
+    // eprintln!("Got lite_command: {lite_command:?}");
     let spans = &lite_command.parts;
 
-    let (has_export, rest_spans) = optional_string(spans, b"export", working_set);
-    let (true, rest_spans) = optional_string(rest_spans, b"alias", working_set) else {
+    let (_has_export, rest_spans) = optional_string(spans, b"export", working_set);
+    let (true, _rest_spans) = optional_string(rest_spans, b"alias", working_set) else {
         working_set.error(ParseError::InternalError(
             "Alias statement unparsable".into(),
             span(spans),
@@ -984,11 +1006,33 @@ pub fn parse_alias(
     }
 
     working_set.error(ParseError::InternalError(
-        "Alias statement unparsable".into(),
+        "Alias statement unparsable-final".into(),
         span(spans),
     ));
 
     garbage_pipeline(spans)
+}
+
+// Crash if "export alias" requires no arguments
+#[test]
+fn test_parse_export_in_block() {
+    let contents = b"export alias";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        let mut lite_command = LiteCommand::new();
+        for span in spans {
+            lite_command.push(*span);
+        }
+        // let sig = nu_protocol::Signature::build("export alias");
+        let sig = nu_protocol::Signature::build("export alias").required(
+            "jazz",
+            SyntaxShape::Any,
+            "jazz!!",
+        );
+        working_set.add_decl(sig.predeclare());
+        format!("{:?}", parse_export_in_block(working_set, &lite_command))
+    };
+    crate::parser::run_test(contents, test_inner);
 }
 
 // This one will trigger if `export` appears during eval, e.g., in a script
@@ -1084,6 +1128,28 @@ pub fn parse_export_in_block(
             garbage_pipeline(&lite_command.parts)
         }
     }
+}
+
+#[test]
+pub fn test_parse_export_in_module() {
+    let contents = b"export alias";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        let mut lite_command = LiteCommand::new();
+        for span in spans {
+            lite_command.push(*span);
+        }
+        // let sig = nu_protocol::Signature::build("export").required("jazz", SyntaxShape::Any, "jazz!!");
+        let sig = nu_protocol::Signature::build("export");
+        working_set.add_decl(sig.predeclare());
+        let sig = nu_protocol::Signature::build("alias");
+        working_set.add_decl(sig.predeclare());
+        format!(
+            "{:?}",
+            parse_export_in_module(working_set, &lite_command, b"source").0
+        )
+    };
+    crate::parser::run_test(contents, test_inner);
 }
 
 // This one will trigger only in a module

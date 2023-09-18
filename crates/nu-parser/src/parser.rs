@@ -228,6 +228,54 @@ pub fn check_call(working_set: &mut StateWorkingSet, command: Span, sig: &Signat
     }
 }
 
+#[test]
+fn test_check_name() {
+    let contents = b"export alias";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        // let [a, b, c @ ..] = spans;
+        format!("{:?}", check_name(working_set, spans))
+    };
+    run_test(contents, test_inner);
+}
+
+#[allow(dead_code)]
+pub fn run_test(
+    contents: &[u8; 12],
+    test_inner: impl Fn(&mut StateWorkingSet<'_>, &[Span]) -> String,
+) {
+    let engine_state = nu_protocol::engine::EngineState::new();
+    let mut working_set = StateWorkingSet::new(&engine_state);
+    let file_id = working_set.add_file("test".to_string(), contents);
+    let new_span = working_set.get_span_for_file(file_id);
+    let (output, err) = lex(contents, new_span.start, &[], &[], false);
+
+    println!("lexer error: {err:?}");
+    println!("lexer output: {output:?}");
+    let spans: Vec<Span> = output.iter().map(|x| x.span).collect();
+    let span_strs: Vec<&str> = spans
+        .iter()
+        .map(|x| std::str::from_utf8(working_set.get_span_contents(*x)).unwrap())
+        .collect();
+    println!("lexer readable: {span_strs:?}");
+
+    let result = test_inner(&mut working_set, &spans);
+
+    // let block = parse(&mut working_set, None, contents, true);
+
+    match (result, working_set.parse_errors.first()) {
+        (b, Some(e)) => {
+            println!(
+                "test: {:?}, ans: {b:#?}, error: {e:#?}",
+                std::str::from_utf8(contents)
+            );
+        }
+        (b, None) => {
+            println!("test: {:?}, parse: {b:#?}", std::str::from_utf8(contents));
+        }
+    }
+}
+
 pub fn check_name<'a>(working_set: &mut StateWorkingSet, spans: &'a [Span]) -> Option<&'a Span> {
     eprintln!(
         "check_name: spans: {:?}",
