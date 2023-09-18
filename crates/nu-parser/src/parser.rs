@@ -283,18 +283,20 @@ pub fn check_name<'a>(
 ) -> Option<&'a Span> {
     match spans {
         [name_span, ..] if working_set.get_span_contents(*name_span) == b"=" => {
-            let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            let command_name =
+                String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
             working_set.error(ParseError::AssignmentMismatch(
-                format!("{name} missing name"),
+                format!("{command_name} missing name"),
                 "missing name".into(),
                 *name_span,
             ));
             Some(name_span)
         }
         [_, equals_span, ..] if working_set.get_span_contents(*equals_span) != b"=" => {
-            let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            let command_name =
+                String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
             working_set.error(ParseError::AssignmentMismatch(
-                format!("{name} missing sign"),
+                format!("{command_name} missing sign"),
                 "missing equal sign".into(),
                 *equals_span,
             ));
