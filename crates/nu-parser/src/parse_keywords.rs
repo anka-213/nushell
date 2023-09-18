@@ -784,7 +784,6 @@ pub fn parse_alias(
     lite_command: &LiteCommand,
     module_name: Option<&[u8]>,
 ) -> Pipeline {
-    // eprintln!("Got lite_command: {lite_command:?}");
     let spans = &lite_command.parts;
 
     let (_has_export, rest_spans) = optional_string(spans, b"export", working_set);
@@ -1006,7 +1005,7 @@ pub fn parse_alias(
     }
 
     working_set.error(ParseError::InternalError(
-        "Alias statement unparsable-final".into(),
+        "Alias statement unparsable".into(),
         span(spans),
     ));
 
