@@ -289,24 +289,26 @@ pub fn check_name<'a>(
     //         .collect_vec()
     // );
 
-    if working_set.get_span_contents(*spans.get(0)?) == b"=" {
-        let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
-        working_set.error(ParseError::AssignmentMismatch(
-            format!("{name} missing name"),
-            "missing name".into(),
-            spans[0],
-        ));
-        Some(&spans[0])
-    } else if working_set.get_span_contents(*spans.get(1)?) != b"=" {
-        let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
-        working_set.error(ParseError::AssignmentMismatch(
-            format!("{name} missing sign"),
-            "missing equal sign".into(),
-            spans[1],
-        ));
-        Some(&spans[1])
-    } else {
-        None
+    match spans {
+        [name_span, ..] if working_set.get_span_contents(*name_span) == b"=" => {
+            let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            working_set.error(ParseError::AssignmentMismatch(
+                format!("{name} missing name"),
+                "missing name".into(),
+                spans[0],
+            ));
+            Some(&name_span)
+        }
+        [_, equals_span, ..] if working_set.get_span_contents(*equals_span) != b"=" => {
+            let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+            working_set.error(ParseError::AssignmentMismatch(
+                format!("{name} missing sign"),
+                "missing equal sign".into(),
+                spans[1],
+            ));
+            Some(&spans[1])
+        }
+        _ => None,
     }
 }
 
