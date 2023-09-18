@@ -234,7 +234,7 @@ fn test_check_name() {
     // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
     let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
         // let [a, b, c @ ..] = spans;
-        format!("{:?}", check_name(working_set, spans))
+        format!("{:?}", check_name(working_set, &spans[..2], &spans[2..]))
     };
     run_test(contents, test_inner);
 }
@@ -276,49 +276,35 @@ pub fn run_test(
     }
 }
 
-pub fn check_name<'a>(working_set: &mut StateWorkingSet, spans: &'a [Span]) -> Option<&'a Span> {
-    eprintln!(
-        "check_name: spans: {:?}",
-        spans
-            .iter()
-            .map(|span| working_set.get_span_contents(*span))
-    );
-    let command_len = if working_set.get_span_contents(*spans.get(0)?) == b"export" {
-        2
-    } else {
-        1
-    };
+pub fn check_name<'a>(
+    working_set: &mut StateWorkingSet,
+    command_spans: &'a [Span],
+    spans: &'a [Span],
+) -> Option<&'a Span> {
+    // eprintln!(
+    //     "check_name: spans: {:?}",
+    //     spans
+    //         .iter()
+    //         .map(|x| std::str::from_utf8(working_set.get_span_contents(*x)).unwrap())
+    //         .collect_vec()
+    // );
 
-    if spans.len() == 1 {
-        None
-    } else if spans.len() < command_len + 3 {
-        // Requires spans.len() > command_len
-        if working_set.get_span_contents(spans[command_len]) == b"=" {
-            let name =
-                String::from_utf8_lossy(working_set.get_span_contents(span(&spans[..command_len])));
-            working_set.error(ParseError::AssignmentMismatch(
-                format!("{name} missing name"),
-                "missing name".into(),
-                // Requires spans.len() > command_len
-                spans[command_len],
-            ));
-            // Requires spans.len() > command_len
-            Some(&spans[command_len])
-        } else {
-            None
-        }
-    // Requires spans.len() > command_len + 1
-    } else if working_set.get_span_contents(spans[command_len + 1]) != b"=" {
-        let name =
-            String::from_utf8_lossy(working_set.get_span_contents(span(&spans[..command_len])));
+    if working_set.get_span_contents(*spans.get(0)?) == b"=" {
+        let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
+        working_set.error(ParseError::AssignmentMismatch(
+            format!("{name} missing name"),
+            "missing name".into(),
+            spans[0],
+        ));
+        Some(&spans[0])
+    } else if working_set.get_span_contents(*spans.get(1)?) != b"=" {
+        let name = String::from_utf8_lossy(working_set.get_span_contents(span(&command_spans)));
         working_set.error(ParseError::AssignmentMismatch(
             format!("{name} missing sign"),
             "missing equal sign".into(),
-            // Requires spans.len() > command_len + 1
-            spans[command_len + 1],
+            spans[1],
         ));
-        // Requires spans.len() > command_len + 1
-        Some(&spans[command_len + 1])
+        Some(&spans[1])
     } else {
         None
     }

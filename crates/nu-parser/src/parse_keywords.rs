@@ -814,13 +814,13 @@ pub fn parse_alias(
         ));
         return garbage_pipeline(spans);
     }
+    let (command_spans, rest_spans) = spans.split_at(split_id);
 
-    if let Some(span) = check_name(working_set, spans) {
+    if let Some(span) = check_name(working_set, command_spans, rest_spans) {
         return Pipeline::from_vec(vec![garbage(*span)]);
     }
 
     if let Some(decl_id) = working_set.find_decl(b"alias") {
-        let (command_spans, rest_spans) = spans.split_at(split_id);
         let (usage, extra_usage) = working_set.build_usage(&lite_command.comments);
 
         let original_starting_error_count = working_set.parse_errors.len();
