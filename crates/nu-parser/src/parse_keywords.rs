@@ -812,13 +812,10 @@ pub fn parse_alias(
         ));
         return garbage_pipeline(spans);
     };
-    let _command_span = span(
-        &export_span
-            .iter()
-            .chain([alias_span].iter())
-            .copied()
-            .collect_vec()[..],
-    );
+    let _command_span = match export_span {
+        Some(exp_span) => span(&[exp_span, alias_span]),
+        None => alias_span,
+    };
     let _rest_span = span_iter.as_slice();
 
     // Version 3
