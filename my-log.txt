@@ -1,0 +1,55 @@
+nu_parser::parser: [crates/nu-parser/src/parser.rs:791] parsing: internal call (decl id: 238)
+nu_utils::utils: perf: crates/nu-cli/src/util.rs:309:9 [32meval_source default_env.nu[0m took [33m38.55976ms[0m
+nu::config_files: read_config_file src/config_files.rs:137:58
+nu_utils::utils: perf: src/run.rs:175:9 [32mread env.nu[0m took [33m38.672824ms[0m
+nu_utils::utils: perf: src/run.rs:193:9 [32mread config.nu[0m took [33m368ns[0m
+nu_cli::eval_file: [crates/nu-cli/src/eval_file.rs:107] parsing file: /Users/anka/projekt/not-mine/nushell/error-new.nu
+nu_parser::parser: [crates/nu-parser/src/parser.rs:5718] parsing block: LiteBlock { block: [LitePipeline { commands: [Command(None, LiteCommand { comments: [], parts: [Span { start: 8448, end: 8453 }, Span { start: 8454, end: 8458 }, Span { start: 8459, end: 8460 }, Span { start: 8461, end: 8462 }] })] }] }
+nu_parser::parser: [crates/nu-parser/src/parser.rs:5304] parsing: builtin commands
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2222] parsing: filesize
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2203] parsing: duration
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2148] parsing: datetime
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1195] parsing: binary
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1406] parsing: range
+nu_parser::parser: [crates/nu-parser/src/parser.rs:5308] parsing: not math expression or unaliasable parser keyword
+nu_parser::parser: [crates/nu-parser/src/parser.rs:5340] parsing: checking for keywords
+nu_parser::parse_keywords: [crates/nu-parser/src/parse_keywords.rs:3028] parsing: const
+nu_parser::parser: [crates/nu-parser/src/parser.rs:703] parsing: keyword(=) MathExpression
+nu_parser::parser: [crates/nu-parser/src/parser.rs:629] parsing: math expression
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4932] parsing: math expression
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: any
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: binary
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1195] parsing: binary
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: filesize
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2222] parsing: filesize
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: duration
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2203] parsing: duration
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: range
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1406] parsing: range
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: datetime
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2148] parsing: datetime
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: int
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: number
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: string
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2610] parsing: string
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: any
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: binary
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1195] parsing: binary
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: filesize
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2222] parsing: filesize
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: duration
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2203] parsing: duration
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: range
+nu_parser::parser: [crates/nu-parser/src/parser.rs:1406] parsing: range
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: datetime
+nu_parser::parser: [crates/nu-parser/src/parser.rs:2148] parsing: datetime
+nu_parser::parser: [crates/nu-parser/src/parser.rs:4592] parsing: value: int
+Error: [31mnu::parser::expected_keyword[0m
+
+  [31m×[0m Expected keyword.
+   ╭─[[36;1;4m/Users/anka/projekt/not-mine/nushell/error-new.nu[0m:1:1]
+ [2m1[0m │ const file = 6
+   · [35;1m──┬──[0m
+   ·   [35;1m╰── [35;1mexpected =[0m[0m
+   ╰────
+

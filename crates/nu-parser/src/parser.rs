@@ -226,6 +226,12 @@ pub fn check_call(working_set: &mut StateWorkingSet, command: Span, sig: &Signat
 }
 
 pub fn check_name<'a>(working_set: &mut StateWorkingSet, spans: &'a [Span]) -> Option<&'a Span> {
+    eprintln!(
+        "check_name: spans: {:?}",
+        spans
+            .iter()
+            .map(|span| working_set.get_span_contents(*span))
+    );
     let command_len = if working_set.get_span_contents(*spans.get(0)?) == b"export" {
         2
     } else {

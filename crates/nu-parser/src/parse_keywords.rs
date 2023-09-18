@@ -721,6 +721,17 @@ fn block_calls_itself(block: &Block, decl_id: usize) -> bool {
     })
 }
 
+fn optional_string<'a>(
+    spans: &'a [Span],
+    str: &[u8],
+    working_set: &mut StateWorkingSet,
+) -> (bool, &'a [Span]) {
+    match spans.split_first() {
+        Some((head, rest)) if working_set.get_span_contents(*head) == str => (true, rest),
+        _ => (false, spans),
+    }
+}
+
 pub fn parse_alias(
     working_set: &mut StateWorkingSet,
     lite_command: &LiteCommand,
@@ -728,6 +739,14 @@ pub fn parse_alias(
 ) -> Pipeline {
     let spans = &lite_command.parts;
 
+    let (has_export, rest_spans) = optional_string(spans, b"export", working_set);
+    let (true, rest_spans) = optional_string(rest_spans, b"alias", working_set) else {
+        working_set.error(ParseError::InternalError(
+            "Alias statement unparsable".into(),
+            span(spans),
+        ));
+        return garbage_pipeline(spans);
+    };
     let (name_span, split_id) =
         if spans.len() > 1 && working_set.get_span_contents(spans[0]) == b"export" {
             (spans[1], 2)
