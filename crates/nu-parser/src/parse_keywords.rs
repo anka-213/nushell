@@ -787,6 +787,7 @@ pub fn parse_alias(
     let spans = &lite_command.parts;
     assert!(spans.len() > 0);
 
+    // Version 1
     let (_has_export, rest_spans) = optional_string(spans, b"export", working_set);
     let (true, _rest_spans) = optional_string(rest_spans, b"alias", working_set) else {
         working_set.error(ParseError::InternalError(
@@ -796,6 +797,31 @@ pub fn parse_alias(
         return garbage_pipeline(spans);
     };
 
+    // Version 2
+    let mut span_iter = spans.iter();
+    let mut cmd_iter = span_iter
+        .by_ref()
+        .map(|&x| (x, working_set.get_span_contents(x)))
+        .peekable();
+
+    let export_span = cmd_iter.next_if(|x| x.1 == b"export").map(|x| x.0);
+    let Some((alias_span, b"alias")) = cmd_iter.next() else {
+        working_set.error(ParseError::InternalError(
+            "Alias statement unparsable".into(),
+            span(spans),
+        ));
+        return garbage_pipeline(spans);
+    };
+    let _command_span = span(
+        &export_span
+            .iter()
+            .chain([alias_span].iter())
+            .copied()
+            .collect_vec()[..],
+    );
+    let _rest_span = span_iter.as_slice();
+
+    // Version 3
     let (command_span, rest_spans) = match &spans[..] {
         &[alias_span, ref rest_spans @ ..]
             if working_set.get_span_contents(alias_span) == b"alias" =>
