@@ -3148,9 +3148,10 @@ pub fn parse_let(working_set: &mut StateWorkingSet, spans: &[Span]) -> Pipeline 
                     };
 
                     let Some(mut opt_type_spans) =
-                      PointedSpanArray::new_from_range(spans, 1..(span.0),0) else {
-                       continue; // This checks span.0 > 1
-                    } ;
+                        PointedSpanArray::new_from_range(spans, 1..(span.0), 0)
+                    else {
+                        continue; // This checks span.0 > 1
+                    };
                     let (lvalue, explicit_type) =
                         parse_var_with_opt_type(working_set, &mut opt_type_spans, false);
 
@@ -3250,9 +3251,9 @@ pub fn parse_const(working_set: &mut StateWorkingSet, spans: &[Span]) -> Pipelin
                 if !(item == b"=" && spans.len() > (span.0 + 1) && span.0 > 1) {
                     continue;
                 }
-                let Some(mut inner_spans) = PointedSpanArray::new(spans,span.0) else {
-                     continue; // Only checks spans.len() > span.0
-                    } ;
+                let Some(mut inner_spans) = PointedSpanArray::new(spans, span.0) else {
+                    continue; // Only checks spans.len() > span.0
+                };
                 let rvalue = parse_multispan_value(
                     working_set,
                     &mut inner_spans,
@@ -3267,9 +3268,10 @@ pub fn parse_const(working_set: &mut StateWorkingSet, spans: &[Span]) -> Pipelin
                 }
 
                 let Some(mut opt_type_spans) =
-                     PointedSpanArray::new_from_range(spans, 1..(span.0),0) else {
-                       continue; // This checks span.0 > 1
-                } ;
+                    PointedSpanArray::new_from_range(spans, 1..(span.0), 0)
+                else {
+                    continue; // This checks span.0 > 1
+                };
 
                 let (lvalue, explicit_type) =
                     parse_var_with_opt_type(working_set, &mut opt_type_spans, false);
@@ -3417,9 +3419,10 @@ pub fn parse_mut(working_set: &mut StateWorkingSet, spans: &[Span]) -> Pipeline 
                     };
 
                     let Some(mut opt_type_spans) =
-                      PointedSpanArray::new_from_range(spans, 1..(span.0),0) else {
-                       continue; // This checks span.0 > 1
-                    } ;
+                        PointedSpanArray::new_from_range(spans, 1..(span.0), 0)
+                    else {
+                        continue; // This checks span.0 > 1
+                    };
                     let (lvalue, explicit_type) =
                         parse_var_with_opt_type(working_set, &mut opt_type_spans, true);
 

@@ -4595,11 +4595,9 @@ pub fn parse_match_block_expression(working_set: &mut StateWorkingSet, span: Spa
             };
 
             let guard_span_vec = tokens.iter().map(|tok| tok.span).collect_vec();
-            let Some(mut guard_spans) =
-                PointedSpanArray::new(&guard_span_vec, 0)
-            else {
+            let Some(mut guard_spans) = PointedSpanArray::new(&guard_span_vec, 0) else {
                 unreachable!("position < output.len() is a checked invarant");
-            } ;
+            };
             let guard =
                 parse_multispan_value(working_set, &mut guard_spans, &SyntaxShape::MathExpression);
 
