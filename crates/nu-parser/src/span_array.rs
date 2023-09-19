@@ -180,15 +180,15 @@ impl<'a> Iterator for PointedSpanArray<'a> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.tail_inclusive().len();
+        let len = self.tail_inclusive().inner.len();
         (len, Some(len))
     }
 
     fn count(self) -> usize {
-        self.tail_inclusive().len()
+        self.tail_inclusive().inner.len()
     }
 
     fn last(self) -> Option<Self::Item> {
-        self.inner.last()
+        self.inner.last().copied()
     }
 }

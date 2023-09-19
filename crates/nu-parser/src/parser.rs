@@ -837,7 +837,7 @@ where
                     custom_completion: None,
                 };
             }
-            // Possibly off-by-one here
+
             let expr = parse_multispan_value(working_set, spans, arg);
             let ty = expr.ty.clone();
 
