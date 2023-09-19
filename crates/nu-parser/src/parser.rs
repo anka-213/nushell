@@ -700,11 +700,11 @@ pub fn parse_multispan_value(
 ) -> Expression
 where
 {
-    let all_spans: Vec<&str> = spans
+    let all_spans = spans
         .get_slice()
         .iter()
-        .map(|x| str::from_utf8(working_set.get_span_contents(*x)).unwrap())
-        .collect();
+        .map(|x| String::from_utf8_lossy(working_set.get_span_contents(*x)))
+        .collect_vec();
     trace!(
         "parsing: multispan {}, for spans {:?} at {}",
         shape,
