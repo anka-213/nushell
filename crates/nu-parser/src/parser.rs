@@ -243,10 +243,7 @@ fn test_check_name() {
 }
 
 #[allow(dead_code)]
-pub fn run_test(
-    contents: &[u8; 12],
-    test_inner: impl Fn(&mut StateWorkingSet<'_>, &[Span]) -> String,
-) {
+pub fn run_test(contents: &[u8], test_inner: impl Fn(&mut StateWorkingSet<'_>, &[Span]) -> String) {
     let engine_state = nu_protocol::engine::EngineState::new();
     let mut working_set = StateWorkingSet::new(&engine_state);
     let file_id = working_set.add_file("test".to_string(), contents);
@@ -611,6 +608,32 @@ fn first_kw_idx(
     (None, spans.len())
 }
 
+#[test]
+fn test_calculate_end_span() {
+    let contents = b"let a = 1";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        // let [a, b, c @ ..] = spans;
+        let sig = Signature::build("let")
+            .input_output_types(vec![(Type::Any, Type::Nothing)])
+            .allow_variants_without_examples(true)
+            .required("var_name", SyntaxShape::VarWithOptType, "variable name")
+            .required(
+                "initial_value",
+                SyntaxShape::Keyword(b"=".to_vec(), Box::new(SyntaxShape::MathExpression)),
+                "equals sign followed by value",
+            );
+        let pointed = PointedSpanArray::new(spans, 1).unwrap();
+        let pos_idx = 0;
+        eprintln!("Signature, required: {:?}", sig.required_positional);
+        format!(
+            "{:?}",
+            calculate_end_span(working_set, &sig, &pointed, pos_idx)
+        )
+    };
+    run_test(contents, test_inner);
+}
+
 fn calculate_end_span(
     working_set: &StateWorkingSet,
     signature: &Signature,
@@ -621,6 +644,11 @@ where
 {
     let spans = spans_both.get_slice();
     let spans_idx = spans_both.get_idx();
+    trace!(
+        "Calculating end span, with pos_idx {} and span_idx {}",
+        positional_idx,
+        spans_idx
+    );
     assert!(spans.len() > spans_idx);
     if signature.rest_positional.is_some() {
         spans.len()
@@ -632,15 +660,25 @@ where
             // We found a keyword. Keywords, once found, create a guidepost to
             // show us where the positionals will lay into the arguments. Because they're
             // keywords, they get to set this by being present
+            trace!("Found kw, with pos_idx {} and span_idx {}", kw_pos, kw_idx);
 
+            // let kw_distance = kw_idx - spans_idx;
+            // if kw_distance == 0 {
+            //     // We are at a keyword, we need to include it
+            //     // (And maybe its argument too?)
+            //     return spans_idx + 1;
+            // }
             let positionals_between = kw_pos - positional_idx - 1;
+            // Equal when kw_pos - positional_idx - 1 == kw_idx - spans_idx
             if positionals_between > (kw_idx - spans_idx) {
-                kw_idx
+                kw_idx // >= spans_idx + 1 // not true! current span can be kw
             } else {
+                // want positionals_between + 1 <= kw_idx - spans_idx
+                // Wrong in equals case
                 kw_idx - positionals_between
             }
         } else {
-            // Make space for the remaining require positionals, if we can
+            // Make space for the remaining required positionals, if we can
             // spans_idx < spans.len() is an invariant
             let remaining_spans = spans.len() - (spans_idx + 1);
             // positional_idx can be larger than required_positional.len() if we have optional args
@@ -662,6 +700,17 @@ pub fn parse_multispan_value(
 ) -> Expression
 where
 {
+    let all_spans: Vec<&str> = spans
+        .get_slice()
+        .iter()
+        .map(|x| str::from_utf8(working_set.get_span_contents(*x)).unwrap())
+        .collect();
+    trace!(
+        "parsing: multispan {}, for spans {:?} at {}",
+        shape,
+        &all_spans,
+        spans.get_idx()
+    );
     match shape {
         SyntaxShape::VarWithOptType => {
             trace!("parsing: var with opt type");
@@ -830,6 +879,31 @@ fn attach_parser_info_builtin(working_set: &StateWorkingSet, name: &str, call: &
         }
         _ => {}
     }
+}
+
+#[test]
+fn test_parse_internal_call() {
+    let contents = b"let = 1";
+    // let test_inner: impl Fn(&mut StateWorkingSet<'_>, &'a [Span]) -> Option<&'a Span> = todo!();
+    let test_inner = |working_set: &mut StateWorkingSet<'_>, spans: &[Span]| {
+        // let [a, b, c @ ..] = spans;
+        let sig = Signature::build("let")
+            .input_output_types(vec![(Type::Any, Type::Nothing)])
+            .allow_variants_without_examples(true)
+            .required("var_name", SyntaxShape::VarWithOptType, "variable name")
+            .required(
+                "initial_value",
+                SyntaxShape::Keyword(b"=".to_vec(), Box::new(SyntaxShape::MathExpression)),
+                "equals sign followed by value",
+            );
+        eprintln!("Signature, required: {:?}", sig.required_positional);
+        let decl_id = working_set.add_decl(sig.predeclare());
+        format!(
+            "{:?}",
+            parse_internal_call(working_set, spans[0], &spans[1..], decl_id).output
+        )
+    };
+    run_test(contents, test_inner);
 }
 
 pub fn parse_internal_call(
@@ -1020,6 +1094,7 @@ pub fn parse_internal_call(
             // Parse a positional arg if there is one
             if let Some(positional) = signature.get_positional(positional_idx) {
                 let end = calculate_end_span(working_set, &signature, &spans, positional_idx);
+                trace!("Got end: {end}");
 
                 if end == spans.get_idx() {
                     // I believe this should be impossible, unless there's another bug in calculate_end_span
