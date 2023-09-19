@@ -403,6 +403,7 @@ where
         // FIXME: only use the first flag you find?
         let split: Vec<_> = arg_contents.split(|x| *x == b'=').collect();
         // Requires split.len() > 0
+        // Iterator::split always returns at least one element
         let long_name = String::from_utf8(split[0].into());
         if let Ok(long_name) = long_name {
             // Requires long_name.len() >= 2
@@ -620,6 +621,7 @@ where
 {
     let spans = spans_both.get_slice();
     let spans_idx = spans_both.get_idx();
+    assert!(spans.len() > spans_idx);
     if signature.rest_positional.is_some() {
         spans.len()
     } else {
@@ -639,15 +641,16 @@ where
             }
         } else {
             // Make space for the remaining require positionals, if we can
-            if signature.num_positionals_after(positional_idx) == 0 {
-                spans.len()
-            } else if signature.required_positional.len() > positional_idx
-                && spans.len() - spans_idx > signature.required_positional.len() - positional_idx
-            {
-                1 + spans.len() - (signature.required_positional.len() - positional_idx)
-            } else {
-                spans_idx + 1
-            }
+            // spans_idx < spans.len() is an invariant
+            let remaining_spans = spans.len() - (spans_idx + 1);
+            // positional_idx can be larger than required_positional.len() if we have optional args
+            let remaining_positional = signature
+                .required_positional
+                .len()
+                .saturating_sub(positional_idx + 1);
+            // Saturates to 0 when we have too few args
+            let extra_spans = remaining_spans.saturating_sub(remaining_positional);
+            spans_idx + 1 + extra_spans
         }
     }
 }
@@ -1025,13 +1028,14 @@ pub fn parse_internal_call(
                 } else {
                     end
                 };
+                debug_assert!(end <= spans.get_slice().len());
 
                 let current_span = spans.current();
 
                 let Some(arg) = spans.with_sub_span(..end, |spans_til_end| {
                     parse_multispan_value(working_set, spans_til_end, &positional.shape)
                 }) else {
-                    debug_assert!(end == 0 || spans.get_idx() == end);
+                    debug_assert!(end == 0);
                     working_set.error(ParseError::MissingPositional(
                         positional.name.clone(),
                         Span::new(current_span.end, current_span.end),
