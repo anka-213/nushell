@@ -89,6 +89,14 @@ impl<'a> PointedSpanArray<'a> {
         self.inner[self.idx]
     }
 
+    pub fn get_prev(&self) -> Option<Span> {
+        if self.idx > 0 {
+            Some(self.inner[self.idx - 1])
+        } else {
+            None
+        }
+    }
+
     pub fn get_slice(&self) -> &'a [Span] {
         self.inner
     }
