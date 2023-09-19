@@ -72,8 +72,7 @@ impl<'a> PointedSpanArray<'a> {
         // Check valid index, otherwise return None
         Self::new(spans.get(range)?, idx)
     }
-}
-impl<'a> PointedSpanArray<'a> {
+
     #[inline]
     #[must_use]
     pub fn new_inner(value: &'a [Span], idx: usize) -> Option<Self> {
@@ -124,9 +123,7 @@ impl<'a> PointedSpanArray<'a> {
     pub fn peek_next(&self) -> Option<Span> {
         self.get_at(self.idx + 1)
     }
-}
 
-impl<'a> PointedSpanArray<'a> {
     // /// Make a new span array of a prefix, sharing the index with the original
     // #[inline]
     // #[must_use]
@@ -149,9 +146,7 @@ impl<'a> PointedSpanArray<'a> {
     pub fn jump_to_end(&mut self) {
         self.idx = self.inner.len() - 1;
     }
-}
 
-impl<'a> PointedSpanArray<'a> {
     #[inline]
     #[must_use]
     pub fn with_sub_span<I, F, T>(&mut self, range: I, callback: F) -> Option<T>
@@ -170,5 +165,30 @@ impl<'a> PointedSpanArray<'a> {
         let result = callback(&mut sub_span);
         self.idx = start_idx + sub_span.idx;
         Some(result)
+    }
+}
+
+impl<'a> Iterator for PointedSpanArray<'a> {
+    type Item = Span;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.try_advance() {
+            Some(self.current())
+        } else {
+            None
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.tail_inclusive().len();
+        (len, Some(len))
+    }
+
+    fn count(self) -> usize {
+        self.tail_inclusive().len()
+    }
+
+    fn last(self) -> Option<Self::Item> {
+        self.inner.last()
     }
 }
