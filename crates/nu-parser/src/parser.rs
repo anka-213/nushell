@@ -1021,13 +1021,21 @@ pub fn parse_internal_call(
             if let Some(positional) = signature.get_positional(positional_idx) {
                 let end = calculate_end_span(working_set, &signature, &spans, positional_idx);
 
-                let end = if end == spans.get_idx() {
+                if end == spans.get_idx() {
                     // I believe this should be impossible, unless there's another bug in calculate_end_span
+                    // It is possible if we are missing a positional before a keyword
                     trace!("end is at span_idx, advancing one more");
-                    end + 1
-                } else {
-                    end
-                };
+                    let prev_span = spans.get_at(spans.get_idx() - 1).unwrap_or(command_span);
+                    let whitespace_span = Span::new(prev_span.end, spans.current().start);
+                    working_set.error(ParseError::MissingPositional(
+                        positional.name.clone(),
+                        whitespace_span,
+                        signature.call_signature(),
+                    ));
+                    call.add_positional(Expression::garbage(whitespace_span));
+                    positional_idx += 1;
+                    continue;
+                }
                 debug_assert!(end <= spans.get_slice().len());
 
                 let current_span = spans.current();
