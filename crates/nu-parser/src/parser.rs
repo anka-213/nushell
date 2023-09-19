@@ -1100,7 +1100,12 @@ pub fn parse_internal_call(
                     // I believe this should be impossible, unless there's another bug in calculate_end_span
                     // It is possible if we are missing a positional before a keyword
                     trace!("end is at span_idx, advancing one more");
-                    let prev_span = spans.get_at(spans.get_idx() - 1).unwrap_or(command_span);
+                    // let prev_span = spans.get_at(spans.get_idx() - 1).unwrap_or(command_span);
+                    let prev_span = if spans.get_idx() == 0 {
+                        command_span
+                    } else {
+                        spans.get_slice()[spans.get_idx() - 1]
+                    };
                     let whitespace_span = Span::new(prev_span.end, spans.current().start);
                     working_set.error(ParseError::MissingPositional(
                         positional.name.clone(),
